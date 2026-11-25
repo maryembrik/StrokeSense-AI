@@ -4,6 +4,8 @@
 
 > Educational research project. Not a diagnosis, not a validated risk calculator, not a substitute for medical assessment.
 
+**Live app:** https://strokesense-ai.streamlit.app · **Report:** [PDF, 4 pages](reports/StrokeSense_Report.pdf)
+
 ![Overview](reports/screenshots/overview_1440.png)
 
 ## What we found
