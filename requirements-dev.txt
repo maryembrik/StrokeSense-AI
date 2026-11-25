@@ -1,0 +1,10 @@
+-r requirements.txt
+catboost==1.2.10
+imbalanced-learn==0.14.2
+interpret-core==0.7.8
+ipykernel==7.4.0
+matplotlib==3.11.2
+nbconvert==7.17.2
+nbformat==5.11.1
+pytest==9.2.0
+xgboost-cpu==3.4.1

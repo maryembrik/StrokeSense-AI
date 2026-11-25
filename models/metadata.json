@@ -1,0 +1,37 @@
+{
+ "model": "L2 logistic regression, C=0.1, no BMI",
+ "features": [
+  "age",
+  "avg_glucose_level",
+  "hypertension",
+  "heart_disease"
+ ],
+ "threshold": 0.05175,
+ "threshold_rule": "highest out-of-fold threshold with sensitivity >= 0.8",
+ "n_dev": 4088,
+ "n_dev_strokes": 199,
+ "oof_at_threshold_optimistic": {
+  "sensitivity": 0.8040201005025126,
+  "specificity": 0.7274363589611725,
+  "precision": 0.13114754098360656,
+  "flagged_fraction": 0.2984344422700587
+ },
+ "nested_estimate": {
+  "sensitivity": 0.793,
+  "specificity": 0.732,
+  "precision": 0.131,
+  "source": "artifacts/results/operating_point_nested.csv"
+ },
+ "standardised_coefficients": {
+  "age": 1.3573759012631923,
+  "avg_glucose_level": 0.18272874604208403,
+  "hypertension": 0.14333593755293467,
+  "heart_disease": 0.07429288354015978
+ },
+ "test_split_scored": false,
+ "data_sha256": "644d473b05d2797006bd94865e4f8bb057f0c721617911613c82c8fcfc707420",
+ "dev_ids_sha256": "ff84cd1db13b5d010ab8d70a180181cc49ad8d9500aabcbe40dba92b9bc34b71",
+ "sklearn": "1.9.1",
+ "python": "3.13.15",
+ "seed": 42
+}

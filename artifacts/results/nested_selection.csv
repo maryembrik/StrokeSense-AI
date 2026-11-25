@@ -1,0 +1,10 @@
+,mean_bootstrap_freq,min,outer_folds_selected
+age,1.0,1.0,20
+avg_glucose_level,0.8375,0.66,13
+hypertension,0.7975,0.51,12
+heart_disease,0.619,0.4,3
+gender,0.05800000000000001,0.0,0
+ever_married,0.0095,0.0,0
+work_type,0.008,0.0,0
+Residence_type,0.022500000000000003,0.0,0
+smoking_status,0.011,0.0,0

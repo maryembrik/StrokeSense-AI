@@ -1,0 +1,29 @@
+== train vs unseen (PR, ROC)
+Logistic 4       train PR 0.182 ROC 0.846 | unseen PR 0.191 ROC 0.842
+Logistic 9       train PR 0.193 ROC 0.848 | unseen PR 0.190 ROC 0.839
+XGBoost          train PR 0.284 ROC 0.881 | unseen PR 0.174 ROC 0.834
+HGB mono pairs   train PR 0.204 ROC 0.861 | unseen PR 0.177 ROC 0.840
+CatBoost         train PR 0.388 ROC 0.889 | unseen PR 0.164 ROC 0.832
+Random Forest    train PR 0.675 ROC 0.979 | unseen PR 0.138 ROC 0.806
+== regularisation, logistic 4
+0.001 [[0.17, 0.83], [0.182, 0.828]]
+0.01 [[0.179, 0.842], [0.189, 0.838]]
+0.1 [[0.182, 0.846], [0.19, 0.842]]
+1 [[0.181, 0.845], [0.189, 0.842]]
+100 [[0.181, 0.845], [0.189, 0.842]]
+== learning curve, logistic 4: fraction of training fold
+0.1 train [0.261 0.862] unseen [0.173 0.826]
+0.2 train [0.224 0.847] unseen [0.19  0.839]
+0.4 train [0.198 0.847] unseen [0.194 0.841]
+0.6 train [0.189 0.849] unseen [0.193 0.842]
+0.8 train [0.186 0.847] unseen [0.193 0.843]
+1 train [0.182 0.846] unseen [0.19  0.842]
+== underfitting probe: add interactions/splines to the 4 features
+squares+interactions [[0.202, 0.848], [0.187, 0.84]]
+splines [[0.204, 0.849], [0.191, 0.839]]
+== leakage
+identical feature rows dev/test: 0 | within dev: 0
+id alone AUC (dev): 0.519
+scaler means differ by fold (fit inside folds): [43.139 43.619 43.319 43.321 43.369]
+== permutation 200 fits
+0.502 0.05 max 0.616

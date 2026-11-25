@@ -1,0 +1,11 @@
+**
+!requirements.txt
+!run.py
+!.streamlit
+!app
+!src
+!models
+!artifacts
+artifacts/*.log
+**/__pycache__
+**/*.pyc

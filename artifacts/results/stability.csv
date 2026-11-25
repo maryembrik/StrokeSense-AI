@@ -1,0 +1,21 @@
+feature,selected,positive,negative,median
+age,1.0,1.0,0.0,1.3342481468481726
+avg_glucose_level,1.0,1.0,0.0,0.14525442999205282
+hypertension,0.98,0.98,0.0,0.1315633705788566
+heart_disease,0.86,0.84,0.02,0.04774355147595993
+smoking_status_never smoked,0.66,0.0,0.66,-0.048998093981567674
+ever_married_Yes,0.535,0.0,0.535,-0.023687677871191037
+gender_Female,0.495,0.0,0.495,0.0
+Residence_type_Rural,0.445,0.0,0.445,0.0
+work_type_Self-employed,0.345,0.0,0.345,0.0
+smoking_status_Unknown,0.13,0.0,0.13,0.0
+work_type_Private,0.08,0.01,0.07,0.0
+Residence_type_Urban,0.08,0.0,0.08,0.0
+gender_Male,0.075,0.0,0.075,0.0
+smoking_status_formerly smoked,0.05,0.045,0.005,0.0
+smoking_status_smokes,0.05,0.045,0.005,0.0
+work_type_Govt_job,0.025,0.0,0.025,0.0
+work_type_Never_worked,0.0,0.0,0.0,0.0
+ever_married_No,0.0,0.0,0.0,0.0
+gender_Other,0.0,0.0,0.0,0.0
+work_type_children,0.0,0.0,0.0,0.0

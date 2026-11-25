@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    image: strokesense
+    ports: ["127.0.0.1:8501:8501"]
+    volumes: ["logs:/logs"]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp", "/home/app"]
+    security_opt: ["no-new-privileges:true"]
+  monitor:
+    image: strokesense
+    command: ["python", "-m", "src.monitor_job", "--every", "300"]
+    volumes: ["logs:/logs"]
+    depends_on:
+      app: {condition: service_healthy}
+    healthcheck: {disable: true}
+    restart: unless-stopped
+    read_only: true
+    network_mode: none
+    security_opt: ["no-new-privileges:true"]
+volumes:
+  logs:

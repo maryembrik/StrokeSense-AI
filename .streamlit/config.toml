@@ -1,0 +1,15 @@
+[theme]
+base = "dark"
+primaryColor = "#25C2B1"
+backgroundColor = "#101C2C"
+secondaryBackgroundColor = "#17283A"
+textColor = "#F3F5F2"
+font = "Inter, 'Segoe UI', sans-serif"
+headingFont = "'Space Grotesk', 'Segoe UI', sans-serif"
+codeFont = "'JetBrains Mono', Consolas, monospace"
+[theme.sidebar]
+backgroundColor = "#0C1624"
+[browser]
+gatherUsageStats = false
+[client]
+toolbarMode = "minimal"
