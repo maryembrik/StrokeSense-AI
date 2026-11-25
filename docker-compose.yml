@@ -6,7 +6,7 @@ services:
     volumes: ["logs:/logs"]
     restart: unless-stopped
     read_only: true
-    tmpfs: ["/tmp", "/home/app"]
+    tmpfs: ["/tmp:mode=1777"]
     security_opt: ["no-new-privileges:true"]
   monitor:
     image: strokesense
