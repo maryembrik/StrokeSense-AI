@@ -4,9 +4,9 @@ from components.core import *
 T, R = research(), results()
 H = T["threshold"]
 t0, grid = H["frozen"], H["grid"]
-hero("Interactive instrument", "One threshold. <em>Thousands of different outcomes.</em>", "The threshold decides how much estimated risk is enough to flag someone. Lower it and more strokes are caught, with more false alarms. No setting avoids the trade-off.")
+hero("Interactive instrument", "One threshold. <em>Thousands of different outcomes.</em>", "The threshold decides how much estimated probability of the stroke class is enough to assign a record to it. Lower it and more strokes are caught, with more false alarms. No setting avoids the trade-off.")
 with panel("ctl"), st.container(key="bigslider"):
-    pct = st.slider("Risk threshold (%)", 1.0, 30.0, round(100 * t0, 1), .1, format="%.1f%%")
+    pct = st.slider("Probability threshold (%)", 1.0, 30.0, round(100 * t0, 1), .1, format="%.1f%%")
 frozen = abs(pct - round(100 * t0, 1)) < .01
 t = t0 if frozen else round(pct / 100, 3)
 i = min(range(len(grid)), key=lambda j: abs(grid[j] - t))
@@ -73,7 +73,8 @@ with panel("agecurve"):
         line(f, X, [(u + v) / (g["P"] + g["N"]) for u, v in zip(g["tp"], g["fp"])], k, c, d, hover="%{y:.0%}")
     vline(f, pct, f"{pct:.1f}%", WHITE)
     show(f, "agecurve_c", 340, x="threshold (%)", y="people flagged", yfmt=".0%", yr=[0, 1.14], unified=True)
-callout("Estimated risk follows age so closely that a single cut-off separates age groups more than it separates people. Age-specific thresholds were not added: they would be another unvalidated layer.")
+callout("The estimated probability follows age so closely that a single cut-off separates age groups more than it separates people. Age-specific thresholds were not added: they would be another unvalidated layer.")
+callout(f"The slider and the age groups on this page are illustrations. The model uses one fixed threshold, {t0:.3%}, for everyone, and nothing on this page changes it.")
 warn("The selected threshold is a research operating point derived from development data. It has not been clinically validated.")
 st.caption(f"Because the slider is read against the same predictions, these figures are slightly optimistic. With thresholds chosen on separate inner data, sensitivity was {R.loc[MAIN, 'sens']:.1%} and precision {R.loc[MAIN, 'prec']:.1%}. Test-set results are separate, in the Research Lab.")
 disclaimer()

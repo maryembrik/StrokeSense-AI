@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-LIMITS = {"age": (18, 82), "avg_glucose_level": (55.0, 272.0), "hypertension": (0, 1), "heart_disease": (0, 1)}
+LIMITS = {"age": (.08, 82), "avg_glucose_level": (55.0, 272.0), "hypertension": (0, 1), "heart_disease": (0, 1)}
 
 
 class Predictor:
@@ -22,6 +22,7 @@ class Predictor:
         self.meta = json.load(open(ROOT / "models/metadata.json"))
         self.card = json.load(open(ROOT / "models/scorecard.json"))
         self.data = json.load(open(ROOT / "artifacts/app/data.json"))
+        self.ages = json.load(open(ROOT / "artifacts/app/age_all.json"))  # ages 0-82; equals the frozen data.json for 18-82
         self.features = self.meta["features"]
 
     @staticmethod
@@ -58,10 +59,10 @@ class Predictor:
         x = self.validate(x)
         r = float(self.model.predict_proba(pd.DataFrame([x])[self.features])[0, 1])
         d, a = self.data, str(int(round(x["age"])))
-        c, pts = d["age_context"][a], self.points(x)
+        c, pts = self.ages["age_context"][a], self.points(x)
         s = sum(pts.values())
         return dict(
-            risk=r, flagged=r >= d["threshold"], threshold=d["threshold"], age_only=d["age_only"][a], points=pts, total=s,
+            risk=r, flagged=r >= d["threshold"], threshold=d["threshold"], age_only=self.ages["age_only"][a], points=pts, total=s,
             card_risk=float(1 / (1 + np.exp(-(self.card["slope"] * s + self.card["intercept"])))), context=c,
             percentile=float(100 * (np.array(c["pct"]) < r).mean()),
             contrib={k: d["coef"][k] * (x[k] - d["mean"][k]) / d["scale"][k] for k in self.features},

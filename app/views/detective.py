@@ -51,13 +51,14 @@ table(pd.DataFrame([{"Model": NM[k], "Median-filled": f"{Q.loc[k, 'median']:.3f}
 insight("The apparent performance advantage associated with median-imputed BMI was <em>substantially reduced</em> when BMI was excluded.")
 a, b = st.columns([1.2, 1], gap="large")
 with a, panel("mech"):
-    chart_title("Interrogating the shortcut", "Average risk gradient boosting gives to people with no BMI, and its ranking score on people who do have one.")
+    chart_title("Interrogating the shortcut", "Average probability gradient boosting gives to people with no BMI, and its ranking score on people who do have one.")
     ren = {"median": "Median", "constant 28.137 (unique)": "Another constant", "median + jitter sd=4": "Median plus noise", "no BMI": "BMI removed"}
     B = csv("bmi_mechanism.csv", 0).loc[list(ren)]
-    table(pd.DataFrame([{"Fill": ren[k], "Risk given to blanks": f"{r['risk of blank']:.1%}", "PR-AUC, everyone": f"{r['all']:.3f}", "PR-AUC, BMI recorded": f"{r['BMI observed']:.3f}"} for k, r in B.iterrows()]))
+    table(pd.DataFrame([{"Fill": ren[k], "Probability given to blanks": f"{r['risk of blank']:.1%}", "PR-AUC, everyone": f"{r['all']:.3f}", "PR-AUC, BMI recorded": f"{r['BMI observed']:.3f}"} for k, r in B.iterrows()]))
 with b:
     callout("A tree can isolate one exact value. If every blank becomes the same number, it can single out the blanks. Any constant gives the gain, noise removes it, and among people who <b>have</b> a BMI the median-filled model is worse than having no BMI.")
-    callout(f"The price of refusing the shortcut: the final model expects {nb.oof_risk:.1%} among blanks, while {nb.observed:.1%} had a stroke ({int(nb.strokes)} of {int(nb.n)}). This is a different missingness pattern, not a reason to restore BMI.", "a")
+    cb = csv("calibration_subgroups.csv").set_index("group").loc["No BMI recorded"]
+    callout(f"<b>Group level, not individual.</b> Among the {int(cb.n)} development records with no BMI the model expected {cb.expected:.0f} strokes in total and {int(cb.strokes)} occurred, {cb.oe:.1f} times as many (approximate 95% interval {cb.oe_lo:.1f} to {cb.oe_hi:.1f}). This says the group total is too low. It does not say that each person in it is underestimated, and a blank BMI does not show that a person had a stroke: {int(cb.n - cb.strokes)} of the {int(cb.n)} did not. The Simulator does not ask for BMI and makes no correction.", "a")
     callout("The findings suggest a missing-data artifact. They do not prove why BMI was missing, and they do not prove conventional target leakage.", "r")
 
 section("Then a second pattern appeared: age", "With the shortcut gone, one global threshold was applied to everyone. This is what it did.")
@@ -86,10 +87,10 @@ with a, panel("agehist", paper=True):
     vline(f, 70.5, "70", "#465868")
     show(f, "agehist_c", 340, paper=True, legend=False, x="age (years)", y="stroke cases")
 with b, panel("riskbox", paper=True):
-    chart_title("What the model predicts", "Estimated risk by age group: median, middle 50%, and 5th to 95th percentile.")
+    chart_title("What the model predicts", "Estimated probability of the stroke class by age group: median, middle 50%, and 5th to 95th percentile.")
     f = fig()
     for k, q in T["age"]["risk_q"].items():
         f.add_trace(go.Box(x=[k], lowerfence=[q[1]], q1=[q[3]], median=[q[4]], q3=[q[5]], upperfence=[q[7]], fillcolor=rgba(DTEAL, .3), line=dict(color=DTEAL, width=2), name=k, hoverinfo="y"))
     hline(f, T["threshold"]["frozen"], f"research threshold {T['threshold']['frozen']:.1%}", DAMBER, "dash")
-    show(f, "riskbox_c", 340, paper=True, legend=False, x="age group", y="estimated risk", yfmt=".0%")
+    show(f, "riskbox_c", 340, paper=True, legend=False, x="age group", y="estimated probability", yfmt=".0%")
 disclaimer()

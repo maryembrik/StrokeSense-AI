@@ -15,7 +15,7 @@ left, right = st.columns([1.3, 1], gap="large", vertical_alignment="center")
 with left:
     hero("Monitoring demonstration", "The world changes. <em>Does the data?</em>", "A model is frozen on the day it is trained. The people it meets afterwards are not. Shift a synthetic population and see what the monitoring would notice.")
 slot = right.container()
-warn("SYNTHETIC DATA. Incoming batches on this page are generated. Nothing is connected to patients or to a production system.")
+warn("SYNTHETIC DATA. Every incoming batch and every shift on this page is computer-generated. No real patients, no production data, and no observed drift.")
 
 section("Create an incoming population")
 C, G = st.columns([1, 1.7], gap="large")
@@ -64,8 +64,8 @@ st.caption("PSI uses ten bins set at the development deciles for age and glucose
 a, b = st.columns([1, 1.2], gap="large")
 with a:
     section("Prediction drift", "Did the model's outputs change?")
-    kpis([(f"{pd_psi:.3f}", "PSI of estimated risk"), (f"{risk.mean():.1%}", f"mean estimated risk, reference {T['reference']['risk_mean']:.1%}"), (f"{(risk >= P.data['threshold']).mean():.0%}", "would be flagged")], True)
-    st.caption(f"KS statistic {pd_ks:.3f}. The generator draws each feature independently, so age no longer travels with glucose or conditions; the mean risk can differ slightly from the reference even with no shift. The frozen model scores the synthetic batch; both sides use the frozen model, and its development scores are in-sample.")
+    kpis([(f"{pd_psi:.3f}", "PSI of estimated probability"), (f"{risk.mean():.1%}", f"mean estimated probability, reference {T['reference']['risk_mean']:.1%}"), (f"{(risk >= P.data['threshold']).mean():.0%}", "would be flagged")], True)
+    st.caption(f"KS statistic {pd_ks:.3f}. The generator draws each feature independently, so age no longer travels with glucose or conditions; the mean probability can differ slightly from the reference even with no shift. The frozen model scores the synthetic batch; both sides use the frozen model, and its development scores are in-sample.")
 with b:
     section("Performance degradation", "Did the predictions become wrong?")
     callout("<b>Not measurable here.</b> It needs true outcomes for the new people. Feature drift alone does not prove the model is worse, and a stable page does not prove it is right.", "a")
@@ -81,19 +81,19 @@ with panel("props"):
 section("How a prediction travels", "Only parts that exist in this application today.")
 html('<div class="flow">' + "".join(f"<div><b>{x}</b><small>{y}</small></div>" for x, y in [
     ("Data", "Four inputs from the simulator"), ("Validation", "Types, ranges, binary flags"), ("Preprocessing", "Saved scaler in the pipeline"), ("Saved logistic model", "SHA-256 checked at start"),
-    ("Prediction", "Risk, then threshold"), ("Monitoring", "JSON log without inputs, scheduled monitor"), ("Drift report", "PSI, KS, chi-square on this page")]) + "</div>")
-section("Application log", "Structured JSON. Each event stores time, model version, latency and a coarse risk band. Inputs and exact risks are never stored.")
+    ("Prediction", "Probability of class 1, then threshold"), ("Monitoring", "JSON log without inputs, scheduled monitor"), ("Drift report", "PSI, KS, chi-square on this page")]) + "</div>")
+section("Application log", "Structured JSON. Each event stores time, model version, latency and a coarse probability band. Inputs and exact probabilities are never stored.")
 E = pd.DataFrame(read_log())
 if E.empty:
     st.info("No predictions logged yet. Run the patient simulator, then return here.")
 else:
     kpis([(f"{len(E)}", "logged events"), (f"{E.latency_ms.median():.1f} ms", "median latency"), (f"{(E.status == 'success').mean():.0%}", "succeeded")], True)
-    table(E.tail(6)[["ts", "id", "model", "band", "latency_ms", "status"]].iloc[::-1].rename(columns={"ts": "Time (UTC)", "id": "Event", "model": "Model", "band": "Risk band", "latency_ms": "Latency, ms", "status": "Status"}))
-section("Monitor job", "A separate scheduled process reads the log only. It compares logged risk bands with the development predictions.")
+    table(E.tail(6)[["ts", "id", "model", "band", "latency_ms", "status"]].iloc[::-1].rename(columns={"ts": "Time (UTC)", "id": "Event", "model": "Model", "band": "Probability band", "latency_ms": "Latency, ms", "status": "Status"}))
+section("Monitor job", "A separate scheduled process reads the log only. It compares logged probability bands with the development predictions.")
 mon_file = ROOT / "logs/monitor_status.json" if "STROKESENSE_LOG" not in os.environ else Path(os.environ["STROKESENSE_LOG"]).parent / "monitor_status.json"
 try:
     ms = json.loads(mon_file.read_text(encoding="utf-8"))
-    kpis([(ms["status"], "status"), (f"{ms['events']}", "events checked"), (f"{ms['psi']:.3f}" if "psi" in ms else "–", "PSI of risk bands"), (f"{ms['latency_p95_ms']:.0f} ms" if ms.get("latency_p95_ms") is not None else "–", "95th percentile latency")], True)
+    kpis([(ms["status"], "status"), (f"{ms['events']}", "events checked"), (f"{ms['psi']:.3f}" if "psi" in ms else "–", "PSI of probability bands"), (f"{ms['latency_p95_ms']:.0f} ms" if ms.get("latency_p95_ms") is not None else "–", "95th percentile latency")], True)
     st.caption(f"Last check {ms['checked_at']}. Fewer than 30 events is reported as insufficient data. Simulator visitors are not a patient population.")
 except (OSError, ValueError, KeyError):
     st.info("The monitor has not run here. Start it with docker compose up, or run: python -m src.monitor_job --once")

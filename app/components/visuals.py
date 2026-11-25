@@ -81,5 +81,5 @@ def gauge(risk, prev, threshold, top=.5, r=120):
            '<defs><linearGradient id="gg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25C2B1"/><stop offset="1" stop-color="#70D9D0"/></linearGradient></defs>'
            + track + f'stroke="#A3B4C4" stroke-opacity=".16" stroke-dasharray="{full:.1f} 1000"/>' + arc + tick
            + f'<line x1="{a:.1f}" y1="{b:.1f}" x2="{c:.1f}" y2="{d:.1f}" stroke="#D9A45B" stroke-width="3.5"/></svg>')
-    label = f"Estimated model risk {val}, on a dial from 0 to 50 percent. Research threshold {threshold:.1%}."
-    return f'<div class="gauge">{svg_img(svg, label)}<div class="gv"><b>{val}</b><span>estimated model risk</span></div><small>amber mark: research threshold {threshold:.1%}</small></div>'
+    label = f"Estimated probability of the stroke class {val}, on a dial from 0 to 50 percent. Research threshold {threshold:.1%}."
+    return f'<div class="gauge">{svg_img(svg, label)}<div class="gv"><b>{val}</b><span>stroke-class probability</span></div><small>amber mark: research threshold {threshold:.1%}</small></div>'

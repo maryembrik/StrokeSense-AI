@@ -19,7 +19,7 @@ def app(v, monkeypatch):
 
 def gauge_value(a):
     import re
-    return [re.search(r"Estimated model risk ([^,]+),", h.body).group(1) for h in a.get("html") if 'class="gauge"' in h.body][-1]
+    return [re.search(r"Estimated probability of the stroke class ([^,]+),", h.body).group(1) for h in a.get("html") if 'class="gauge"' in h.body][-1]
 
 
 @pytest.mark.parametrize("v", ["overview", "simulator", "detective", "lab", "threshold", "drift"])
@@ -38,13 +38,20 @@ def test_simulator_matches_saved_pipeline(monkeypatch):
     a = app("simulator", monkeypatch)
     assert gauge_value(a) == "–"
     shown = []
-    for age in (18, 58, 82):
+    for age in (1, 17, 58, 82):
         a.slider[0].set_value(age)
         a.button[0].click().run()
         assert not a.exception
         shown.append(gauge_value(a))
         assert shown[-1] == f"{P.predict(dict(age=age, avg_glucose_level=105, hypertension=0, heart_disease=0))['risk']:.1%}"
-    assert len(set(shown)) == 3
+    assert len(set(shown)) == 4
+
+
+def test_full_age_range_keeps_frozen_values():
+    for a, v in P.data["age_context"].items():
+        assert P.ages["age_context"][a] == v and P.ages["age_only"][a] == P.data["age_only"][a]
+    for a in (.08, 1, 17.5, 82):
+        assert 0 < P.predict({**X, "age": a})["risk"] < 1
 
 
 def test_research_json_matches_sources():
@@ -73,7 +80,7 @@ def test_threshold_extremes(v, lo, hi, monkeypatch):
         assert not a.exception
 
 
-@pytest.mark.parametrize("bad", [dict(age=10), dict(age=float("nan")), dict(avg_glucose_level=900), dict(hypertension=.5), dict(age="abc"), dict(age=None)])
+@pytest.mark.parametrize("bad", [dict(age=0), dict(age=83), dict(age=float("nan")), dict(avg_glucose_level=900), dict(hypertension=.5), dict(age="abc"), dict(age=None)])
 def test_rejects_bad_input(bad):
     with pytest.raises(ValueError):
         P.predict({**X, **bad})
@@ -96,7 +103,7 @@ def test_scorecard_matches_training_class():
     from src.train import development_data
     d = development_data()
     s = IntegerScorecard().fit(d.drop(columns="bmi"), d.stroke)
-    q = d[d.age >= 18].head(60)
+    q = d.head(60)
     assert [sum(P.points(dict(r)).values()) for _, r in q.iterrows()] == list(s.score(q))
 
 
@@ -124,7 +131,7 @@ def test_frozen_files_and_single_test_scoring():
     assert sum(g["n"] for g in age) == 1022 and sum(g["caught"] for g in age) == m["tp"] and sum(g["false_alarms"] for g in age) == m["fp"]
 
 
-@pytest.mark.parametrize("tab", ["ROC and PR curves", "Feature stability", "Calibration", "Age-matched ranking", "Subgroups", "Final test"])
+@pytest.mark.parametrize("tab", ["ROC and PR curves", "Feature stability", "Calibration", "Age-matched ranking", "Subgroups", "Final test", "Robustness", "Limitations"])
 def test_lab_tabs(tab, monkeypatch):
     monkeypatch.syspath_prepend(str(R / "app"))
     a = AppTest.from_file(str(R / "app/views/lab.py"), default_timeout=90)
@@ -145,3 +152,12 @@ def test_monitor_status(tmp_path):
     assert job.summarise(same, ref)["status"] == "stable"
     assert job.summarise([dict(few[0], band="10%+")] * 100, ref)["status"] == "drift"
     assert job.summarise([], ref)["events"] == 0
+
+
+@pytest.mark.parametrize("age,word", [(39, "0, non-stroke"), (80, "1, stroke")])
+def test_simulator_shows_class(age, word, monkeypatch):
+    a = app("simulator", monkeypatch)
+    a.slider[0].set_value(age)
+    a.button[0].click().run()
+    assert not a.exception
+    assert any('class="verdict"' in h.body and word in h.body for h in a.get("html"))

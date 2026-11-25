@@ -1,10 +1,11 @@
 from components.charts import *
 from components.core import *
+from src.limitations import HEAD, NEEDS_DATA, NOT_RESOLVABLE
 
 T, R, V, F = research(), results(), subgroups(), final_test()
 m = R.loc[MAIN]
-hero("Evidence and methods", "Ten models, <em>one honest comparison</em>", "Every score is for people the model had not seen: 4 repeats of 5-fold cross-validation on 4,088 development records with 199 strokes. The last tab shows the single test-set scoring, kept separate.")
-tabs = st.tabs(["Benchmark", "ROC and PR curves", "Feature stability", "Calibration", "Age-matched ranking", "Subgroups", "Final test"], on_change="rerun", key="labtabs")
+hero("Evidence and methods", "Ten models, <em>one honest comparison</em>", "Every score is for people the model had not seen: 4 repeats of 5-fold cross-validation on 4,088 development records with 199 strokes. The Final test tab shows the single test-set scoring, kept separate.")
+tabs = st.tabs(["Benchmark", "ROC and PR curves", "Feature stability", "Calibration", "Age-matched ranking", "Subgroups", "Final test", "Robustness", "Limitations"], on_change="rerun", key="labtabs")
 
 if tabs[0].open:  # draw only when visible so charts get the right width
     with tabs[0]:
@@ -15,8 +16,10 @@ if tabs[0].open:  # draw only when visible so charts get the right width
         S = R.sort_values(COL[s][0], ascending=s.startswith(("Gap", "False")))
         with panel("bench"):
             table(pd.DataFrame([{"Model": NAMES[i], **{n: f.format(r[c]) for n, (c, f) in COL.items()}} for i, r in S.iterrows()]), NAMES[MAIN])
+        ns = csv("operating_point_nested.csv", 0).loc["Logistic nested-selection"]
+        callout(f"The {m.pr:.3f} PR-AUC of the four-feature model is <b>exploration-informed</b>: its features were chosen after looking at this data. Repeating the selection inside every outer fold gives <b>{ns.pr_fold:.3f}</b>, the conservative, selection-aware estimate.", "a")
         with st.expander("What the metrics mean"):
-            st.markdown("- **PR-AUC**: how well strokes are ranked above others, with emphasis on precision. Random is 0.049.\n- **ROC-AUC**: chance that a random stroke case ranks above a random non-case. Random is 0.5.\n- **Sensitivity**: share of strokes caught. **Specificity**: share of people without stroke cleared. **Precision**: share of flagged people who had a stroke. **F1**: balance of precision and sensitivity.\n- **Gap**: training score minus unseen score. Near zero means no sign of overfitting.\n- Sensitivity, specificity, precision and F1 use a threshold chosen inside each training fold. PR-AUC and ROC-AUC are means over 20 folds.")
+            st.markdown("- **PR-AUC**: how well strokes are ranked above others, with emphasis on precision. Random is 0.049.\n- **ROC-AUC**: chance that a random stroke case ranks above a random non-case. Random is 0.5.\n- **Sensitivity**: share of strokes caught. **Specificity**: share of people without stroke cleared. **Precision**: share of flagged people who had a stroke. **F1**: balance of precision and sensitivity.\n- **Gap**: training score minus unseen score. Near zero is reassuring but does not rule out overfitting or selection optimism.\n- Sensitivity, specificity, precision and F1 use a threshold chosen inside each training fold. PR-AUC and ROC-AUC are means over 20 folds.")
         with panel("diff"):
             chart_title("PR-AUC difference from the primary model", "Bars are plus or minus two corrected standard errors (Nadeau-Bengio). Repeated folds are not independent, so plain standard errors would be too small.")
             D = R.drop(index=MAIN).sort_values("dpr")
@@ -66,19 +69,19 @@ if tabs[3].open:  # draw only when visible so charts get the right width
         C = calib()
         L4 = C.loc["Logistic 4"]
         section("Calibration", "When the model says 10%, about 10% of those people should have had a stroke.")
-        kpis([(f"{L4.slope:.2f}", f"calibration slope, 95% interval {L4.slope_lo:.2f} to {L4.slope_hi:.2f}; 1 is ideal"), (f"{m.brier:.4f}", "Brier score, lower is better"), (f"{m.mean_pred:.2%}", "mean predicted risk"), (f"{T['prevalence']:.2%}", "observed prevalence")], True)
+        kpis([(f"{L4.slope:.2f}", f"calibration slope, 95% interval {L4.slope_lo:.2f} to {L4.slope_hi:.2f}; 1 is ideal"), (f"{m.brier:.4f}", "Brier score, lower is better"), (f"{m.mean_pred:.2%}", "mean predicted probability"), (f"{T['prevalence']:.2%}", "observed prevalence")], True)
         sel = st.multiselect("Add models", [k for k in NAMES if k != MAIN], default=["CatBoost"], format_func=NAMES.get, key="calmodels")
         with panel("cal"):
-            chart_title("Predicted against observed risk", "Ten equal-size groups by predicted risk, four repeats pooled. Points above the dotted line are underestimates.")
+            chart_title("Predicted probability against observed rate", "Ten equal-size groups by predicted probability, four repeats pooled. Points above the dotted line are underestimates.")
             f = fig()
             line(f, [0, .35], [0, .35], "perfect calibration", SLATE, "dot", 1.4)
             for k in [*sel, MAIN]:
                 col_, dash = STYLE[k]
                 q = T["calibration"][k]
                 f.add_trace(go.Scatter(x=q["pred"], y=q["obs"], name=NAMES[k], mode="lines+markers", line=dict(color=col_, dash=dash, width=3 if k == MAIN else 2), marker=dict(size=9 if k == MAIN else 7, color=col_), hovertemplate="predicted %{x:.1%}, observed %{y:.1%}<extra>" + NAMES[k] + "</extra>"))
-            show(f, "cal_c", 430, x="mean predicted risk", y="observed stroke rate", xfmt=".0%", yfmt=".0%")
+            show(f, "cal_c", 430, x="mean predicted probability", y="observed stroke rate", xfmt=".0%", yfmt=".0%")
         table(pd.DataFrame([{"Model": NAMES[i], "Brier": f"{r.brier:.4f}", "Mean predicted": f"{r.mean_pred:.2%}", "Observed": f"{T['prevalence']:.2%}", "Slope (95% interval)": (lambda z: f"{z.slope:.2f} ({z.slope_lo:.2f}–{z.slope_hi:.2f})")(C.loc[{MAIN: "Logistic 4"}.get(i, i)]) if {MAIN: "Logistic 4"}.get(i, i) in C.index else "not computed"} for i, r in R.sort_values("brier").iterrows()]), NAMES[MAIN])
-        callout("Calibration is good overall but not for people with no recorded BMI, whose risk is underestimated (see Subgroups).", "a")
+        callout("Calibration is good overall. As a group, records with no BMI had more strokes than the model expected in total (see Leak Detective).", "a")
 
 if tabs[4].open:  # draw only when visible so charts get the right width
     with tabs[4]:
@@ -95,6 +98,8 @@ if tabs[4].open:  # draw only when visible so charts get the right width
             show(f, "am_c", 400, x="how close in age the pair must be", y="gain in concordance")
         z = S[S.weighting == "pair"]
         table(pd.DataFrame([{"Match": n[int(r.window)], "Pairs per repeat": f"{r.pairs:,.0f}", "Model": f"{r.logistic:.3f}", "Age only": f"{r.age_only:.3f}", "Gain": f"{r.gain:+.3f}", "95% interval": f"{r.gain_lo:.3f} to {r.gain_hi:.3f}"} for _, r in z.iterrows()]))
+        callout("Each pair is one person with a stroke and one without, within the stated age distance and in the same held-out fold. The score is the share of pairs ranked correctly, ties counting half, averaged over four repeats. Pair-weighted: every pair counts equally. Case-weighted: every stroke counts equally. Intervals come from 150 resamples of people with predictions held fixed, so they leave out retraining variation. This is a concordance (AUC-type) gain, not a PR-AUC difference.")
+        callout("These intervals keep the four features and predictions fixed. The Robustness tab repeats selection and training: the gain is smaller and its interval includes zero.", "a")
         callout("This is a within-age ranking comparison. It is not a causal effect and does not prove clinical usefulness. Wider windows let age itself rank some pairs.")
 
 if tabs[5].open:  # draw only when visible so charts get the right width
@@ -151,4 +156,44 @@ if tabs[6].open:
         q0, q1, q2, q3 = F["subgroups"][:4]
         callout(f"The age pattern repeated: {q0['caught']} of {q0['strokes']} strokes caught at 40 or under, {q1['caught']} of {q1['strokes']} at 41–60, {q2['caught'] + q3['caught']} of {q2['strokes'] + q3['strokes']} above 60, where nearly everyone is flagged. Several groups have fewer than {MIN_CASES} strokes, so counts are shown instead of rates.", "a")
         callout("Test PR-AUC is higher than the development estimate, but the development value sits inside the test interval. With 50 strokes this is consistent with sampling variation and is not evidence of improvement.")
+
+if tabs[7].open:
+    with tabs[7]:
+        section("Robustness", "Checks run after the freeze, on development data only. They changed no model, feature, threshold or test result.")
+        B = csv("retraining_bootstrap.csv").set_index(["metric", "model"])
+        N_ = len(csv("retraining_resamples.csv"))
+        chart_title("Intervals that include selection and training", "Gain over age alone. Three different questions, so three different intervals.")
+        rw = lambda k, n: f"{B.loc[(k, n), 'mean']:+.3f} ({B.loc[(k, n), 'lo']:+.3f} to {B.loc[(k, n), 'hi']:+.3f})"
+        g = age_gain()
+        table(pd.DataFrame([{"Method": "Existing: predictions fixed, people resampled", "PR-AUC gain": "not used here", "Same-age ranking gain": f"{g.gain:+.3f} ({g.gain_lo:+.3f} to {g.gain_hi:+.3f})"},
+                            {"Method": "Four features fixed, model retrained", "PR-AUC gain": rw("pr", "four minus age"), "Same-age ranking gain": rw("match", "four minus age")},
+                            {"Method": "Features selected again and model retrained", "PR-AUC gain": rw("pr", "selected minus age"), "Same-age ranking gain": rw("match", "selected minus age")}]))
+        with panel("rb"):
+            f, K = fig(), [("four minus age", "four features fixed", TEAL, "circle", .12), ("selected minus age", "features selected again", AMBER, "diamond", -.12)]
+            M = [("pr", "PR-AUC"), ("roc", "ROC-AUC"), ("match", "same-age ranking")]
+            for k, nme, c, sy, o in K:
+                q = B.loc[[(a_, k) for a_, _ in M]]
+                points(f, q["mean"].tolist(), [i + o for i in range(3)], nme, c, sy, lo=q.lo.tolist(), hi=q.hi.tolist(), horizontal=True, hover="%{x:+.3f}")
+            f.add_vline(x=0, line=dict(color=MUTE, width=1.2))
+            f.update_yaxes(tickvals=list(range(3)), ticktext=[b_ for _, b_ in M], range=[-.6, 2.6])
+            show(f, "rb_c", 320, x="gain over age alone, 95% of resamples", xfmt="+.2f")
+        st.caption(f"{N_} resamples. Each draws people with replacement within outcome, repeats stability selection (100 inner bootstraps), refits, and scores the people not drawn (about {csv('retraining_resamples.csv').strokes.mean():.0f} strokes). No convergence warnings and no empty selections. The full script takes about four minutes. Resampled rows repeat inside selection, and training on about 63% of distinct people makes scores slightly pessimistic. With the four features fixed, using 250 instead of 500 resamples moved the PR-AUC and same-age interval ends by 0.005 or less.")
+        callout("Once selection is repeated, the same-age gain shrinks and its interval includes zero. The evidence that the extra features help beyond age is suggestive, not established.", "a")
+        chart_title("Does heart disease earn its place?", "Age, glucose and hypertension, with and without heart disease.")
+        H3 = csv("three_vs_four.csv")
+        table(pd.DataFrame([{"Folds": r.folds, "Metric": {"pr": "PR-AUC", "roc": "ROC-AUC", "brier": "Brier"}[r.metric], "Three": f"{r.three:.4f}", "Four": f"{r.four:.4f}", "Four minus three": f"{r.difference:+.4f} ± {r.two_se:.4f}", "Folds where four is better": f"{r.folds_better} of {r.n_folds}"} for r in H3.itertuples()]))
+        callout("<b>No consistent improvement.</b> On predictive grounds heart disease is not needed. It stays only because the model was frozen and test-scored with it, and removing it now would mean a new model. Clinical plausibility is not evidence of predictive value here.", "a")
+        chart_title("Does smoking stay unselected?", "Stability selection repeated with different treatments of the 30.5% recorded as Unknown.")
+        SM = csv("smoking_sensitivity.csv")
+        table(pd.DataFrame([{"Treatment of Unknown": r.treatment, "Smoking selected": f"{r.sel_smoking_status} of {r.selections}", "Mean inner frequency (cut 80%)": f"{r.smoking_freq:.0%}"} for r in SM.itertuples()]))
+        st.caption("Random draw assumes that, within an age band, Unknown people smoke like the known ones. Removing Unknown assumes they are missing at random and shrinks the sample. The two extremes are bounds, not recommendations. None of these assumptions can be checked.")
+        callout("Smoking stayed unselected in 199 of 200 selections, so the result hardly depends on how Unknown is handled. This is about added prediction in this dataset. It does not mean smoking has no medical effect on stroke.")
+
+if tabs[8].open:
+    with tabs[8]:
+        section("Limitations", "What cannot be fixed here, why, what would fix it, and how to read the results because of it.")
+        for t_, rows_ in (("Need new data", NEEDS_DATA), ("Cannot be resolved from the current dataset", NOT_RESOLVABLE)):
+            chart_title(t_)
+            table(pd.DataFrame(rows_, columns=HEAD), wrap=True)
+        st.caption("No external dataset was downloaded in this phase.")
 disclaimer()

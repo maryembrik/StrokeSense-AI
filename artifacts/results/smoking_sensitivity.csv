@@ -1,0 +1,7 @@
+treatment,selections,mean_n,smoking_freq,smoking_max,sel_age,sel_avg_glucose_level,sel_hypertension,sel_heart_disease,sel_gender,sel_ever_married,sel_work_type,sel_Residence_type,sel_smoking_status
+Unknown as its own category (original),20,3270.4,0.011,0.05,20,13,12,3,0,0,0,0,0
+Unknown drawn at random within age band,100,3270.4,0.157,0.9,100,65,60,15,0,0,0,0,1
+"Ever smoked, never smoked, unknown",20,3270.4,0.011,0.05,20,13,12,3,0,0,0,0,0
+Unknown removed (sensitivity only),20,2272.8,0.0785,0.24,20,3,10,0,0,0,0,0,0
+Extreme: all Unknown as never smoked,20,3270.4,0.2975,0.65,20,13,12,3,0,0,0,0,0
+Extreme: all Unknown as smokes,20,3270.4,0.0115,0.05,20,13,12,3,0,0,0,0,0

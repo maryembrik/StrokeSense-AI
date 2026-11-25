@@ -19,7 +19,7 @@ NAMES = {MAIN: "Logistic, 4 features", "Logistic": "Logistic, tuned", "Logistic 
          "HGB monotone": "Monotone boosting", "XGBoost": "XGBoost", "Balanced RF": "Balanced random forest", "Random Forest": "Random forest", BASE: "Age only"}
 BAND = {"0-40": "40 or under", "41-60": "41–60", "61-70": "61–70", "71+": "71+"}
 MIN_CASES = 10  # below this, a subgroup rate is not shown
-DISCLAIMER = "This is an educational research simulation, not a medical diagnosis, a clinically validated risk calculator or a substitute for professional medical assessment."
+DISCLAIMER = "This educational research application classifies observations according to the stroke label available in the dataset. It has not been validated as a prospective future-stroke prediction tool or a clinical risk calculator. It is not a medical diagnosis or a substitute for professional medical assessment."
 
 
 @st.cache_resource
@@ -115,7 +115,7 @@ def warn(t):
     html(f'<div class="warn" role="note"><div>{t}</div></div>')
 
 
-def table(df, highlight=None, tag="primary"):
+def table(df, highlight=None, tag="primary", wrap=False):
     head = "".join(f"<th>{escape(str(c))}</th>" for c in df.columns)
     body = ""
     for _, r in df.iterrows():
@@ -124,7 +124,7 @@ def table(df, highlight=None, tag="primary"):
         if hi:
             cells[0] += f'<span class="tag">{tag}</span>'
         body += f'<tr class="{"hi" if hi else ""}">' + "".join(f"<td>{c}</td>" for c in cells) + "</tr>"
-    html(f'<div class="tbl" tabindex="0"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>')
+    html(f'<div class="tbl{" wrap" if wrap else ""}" tabindex="0"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>')
 
 
 def link(view, label, icon=None):
